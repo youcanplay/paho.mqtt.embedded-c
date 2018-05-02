@@ -17,6 +17,9 @@
  *******************************************************************************/
 #include "MQTTClient.h"
 
+#include <stdio.h>
+#include <string.h>
+
 static void NewMessageData(MessageData* md, MQTTString* aTopicName, MQTTMessage* aMessage) {
     md->topicName = aTopicName;
     md->message = aMessage;
@@ -269,6 +272,7 @@ int cycle(MQTTClient* c, Timer* timer)
         case CONNACK:
         case PUBACK:
         case SUBACK:
+        case UNSUBACK:
             break;
         case PUBLISH:
         {
@@ -358,6 +362,10 @@ int MQTTYield(MQTTClient* c, int timeout_ms)
     return rc;
 }
 
+int MQTTIsConnected(MQTTClient* client)
+{
+  return client->isconnected;
+}
 
 void MQTTRun(void* parm)
 {
