@@ -337,6 +337,7 @@ exit:
     return rc;
 }
 
+
 int MQTTYield(MQTTClient* c, int timeout_ms)
 {
     int rc = SUCCESS;
