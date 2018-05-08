@@ -74,7 +74,6 @@ void MQTTClientInit(MQTTClient* c, Network* network, unsigned int command_timeou
 	  c->next_packetid = 1;
     TimerInit(&c->last_sent);
     TimerInit(&c->last_received);
-    TimerInit(&c->last_ping);
 #if defined(MQTT_TASK)
 	  MutexInit(&c->mutex);
 #endif
@@ -140,7 +139,7 @@ static int readPacket(MQTTClient* c, Timer* timer)
     header.byte = c->readbuf[0];
     rc = header.bits.type;
     if (c->keepAliveInterval > 0)
-        TimerCountdown(&c->last_received, c->keepAliveInterval); // record the fact that we have successfully received a packet
+        TimerCountdown(&c->last_received, c->keepAliveInterval + (c->keepAliveInterval / 2)); // record the fact that we have successfully received a packet
 exit:
     return rc;
 }
@@ -219,18 +218,16 @@ int keepalive(MQTTClient* c)
 
     if (TimerIsExpired(&c->last_sent) || TimerIsExpired(&c->last_received))
     {
-        if (c->ping_outstanding && TimerIsExpired(&c->last_ping))
+        if (c->ping_outstanding)
             rc = FAILURE; /* PINGRESP not received in keepalive interval */
-        else if (!c->ping_outstanding)
+        else
         {
             Timer timer;
             TimerInit(&timer);
             TimerCountdownMS(&timer, 1000);
             int len = MQTTSerialize_pingreq(c->buf, c->buf_size);
-            if (len > 0 && (rc = sendPacket(c, len, &timer)) == SUCCESS) { // send the ping packet
+            if (len > 0 && (rc = sendPacket(c, len, &timer)) == SUCCESS) // send the ping packet
                 c->ping_outstanding = 1;
-                TimerCountdown(&c->last_ping, c->pingTimeout);
-            }
         }
     }
 
@@ -433,9 +430,8 @@ int MQTTConnectWithResults(MQTTClient* c, MQTTPacket_connectData* options, MQTTC
         options = &default_options; /* set default options if none were supplied */
 
     c->keepAliveInterval = options->keepAliveInterval;
-    c->pingTimeout = options->pingTimeout;
     c->cleansession = options->cleansession;
-    TimerCountdown(&c->last_received, c->keepAliveInterval);
+    TimerCountdown(&c->last_received, c->keepAliveInterval + (c->keepAliveInterval / 2));
     if ((len = MQTTSerialize_connect(c->buf, c->buf_size, options)) <= 0)
         goto exit;
     if ((rc = sendPacket(c, len, &connect_timer)) != SUCCESS)  // send the connect packet
