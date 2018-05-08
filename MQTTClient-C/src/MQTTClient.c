@@ -139,7 +139,7 @@ static int readPacket(MQTTClient* c, Timer* timer)
     header.byte = c->readbuf[0];
     rc = header.bits.type;
     if (c->keepAliveInterval > 0)
-        TimerCountdown(&c->last_received, c->keepAliveInterval); // record the fact that we have successfully received a packet
+        TimerCountdown(&c->last_received, c->keepAliveInterval + (c->keepAliveInterval / 2)); // record the fact that we have successfully received a packet
 exit:
     return rc;
 }
@@ -431,7 +431,7 @@ int MQTTConnectWithResults(MQTTClient* c, MQTTPacket_connectData* options, MQTTC
 
     c->keepAliveInterval = options->keepAliveInterval;
     c->cleansession = options->cleansession;
-    TimerCountdown(&c->last_received, c->keepAliveInterval);
+    TimerCountdown(&c->last_received, c->keepAliveInterval + (c->keepAliveInterval / 2));
     if ((len = MQTTSerialize_connect(c->buf, c->buf_size, options)) <= 0)
         goto exit;
     if ((rc = sendPacket(c, len, &connect_timer)) != SUCCESS)  // send the connect packet
