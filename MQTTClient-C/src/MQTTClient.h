@@ -111,7 +111,6 @@ typedef struct MQTTClient
     unsigned char *buf,
       *readbuf;
     unsigned int keepAliveInterval;
-    unsigned int pingTimeout;
     char ping_outstanding;
     int isconnected;
     int cleansession;
@@ -125,7 +124,7 @@ typedef struct MQTTClient
     void (*defaultMessageHandler) (MessageData*);
 
     Network* ipstack;
-    Timer last_sent, last_received, last_ping;
+    Timer last_sent, last_received;
 #if defined(MQTT_TASK)
     Mutex mutex;
     Thread thread;
